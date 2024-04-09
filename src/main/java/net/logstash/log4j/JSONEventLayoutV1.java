@@ -14,15 +14,12 @@ import org.apache.log4j.spi.ThrowableInformation;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
 
 public class JSONEventLayoutV1 extends Layout {
 
     private boolean locationInfo;
 
     private String customUserFields;
-
-    private final boolean ignoreThrowable = false;
 
     private final String hostname = new HostData().getHostName();
 
@@ -136,7 +133,7 @@ public class JSONEventLayoutV1 extends Layout {
     }
 
     public boolean ignoresThrowable() {
-        return ignoreThrowable;
+        return false;
     }
 
     /**
