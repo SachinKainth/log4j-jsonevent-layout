@@ -1,9 +1,11 @@
 package net.logstash.log4j;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import net.logstash.log4j.data.HostData;
 import net.minidev.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Layout;
 import org.apache.log4j.spi.LocationInfo;
 import org.apache.log4j.spi.LoggingEvent;
@@ -11,32 +13,22 @@ import org.apache.log4j.spi.ThrowableInformation;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
 
 public class JSONEventLayoutV0 extends Layout {
 
-    private boolean locationInfo = false;
+    private boolean locationInfo;
 
-    private String tags;
-    private boolean ignoreThrowable = false;
+    private final String hostname = new HostData().getHostName();
 
-    private boolean activeIgnoreThrowable = ignoreThrowable;
-    private String hostname = new HostData().getHostName();
-    private String threadName;
-    private long timestamp;
-    private String ndc;
-    private Map mdc;
-    private LocationInfo info;
     private HashMap<String, Object> fieldData;
-    private HashMap<String, Object> exceptionInformation;
 
-    private JSONObject logstashEvent;
-
-    public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-    public static final FastDateFormat ISO_DATETIME_TIME_ZONE_FORMAT_WITH_MILLIS = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", UTC);
+    public static final DateTimeFormatter ISO_DATETIME_TIME_ZONE_FORMAT_WITH_MILLIS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
     public static String dateFormat(long timestamp) {
-        return ISO_DATETIME_TIME_ZONE_FORMAT_WITH_MILLIS.format(timestamp);
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        ZoneId zoneId = ZoneId.of("UTC");
+        LocalDateTime localDate = instant.atZone(zoneId).toLocalDateTime();
+        return localDate.format(ISO_DATETIME_TIME_ZONE_FORMAT_WITH_MILLIS);
     }
 
     /**
@@ -57,14 +49,14 @@ public class JSONEventLayoutV0 extends Layout {
     }
 
     public String format(LoggingEvent loggingEvent) {
-        threadName = loggingEvent.getThreadName();
-        timestamp = loggingEvent.getTimeStamp();
-        fieldData = new HashMap<String, Object>();
-        exceptionInformation = new HashMap<String, Object>();
-        mdc = loggingEvent.getProperties();
-        ndc = loggingEvent.getNDC();
+        String threadName = loggingEvent.getThreadName();
+        long timestamp = loggingEvent.getTimeStamp();
+        fieldData = new HashMap<>();
+        HashMap<String, Object> exceptionInformation = new HashMap<>();
+        Map mdc = loggingEvent.getProperties();
+        String ndc = loggingEvent.getNDC();
 
-        logstashEvent = new JSONObject();
+        JSONObject logstashEvent = new JSONObject();
 
         logstashEvent.put("@source_host", hostname);
         logstashEvent.put("@message", loggingEvent.getRenderedMessage());
@@ -79,14 +71,14 @@ public class JSONEventLayoutV0 extends Layout {
                 exceptionInformation.put("exception_message", throwableInformation.getThrowable().getMessage());
             }
             if (throwableInformation.getThrowableStrRep() != null) {
-                String stackTrace = StringUtils.join(throwableInformation.getThrowableStrRep(), "\n");
+                String stackTrace = String.join("\n", throwableInformation.getThrowableStrRep());
                 exceptionInformation.put("stacktrace", stackTrace);
             }
             addFieldData("exception", exceptionInformation);
         }
 
         if (locationInfo) {
-            info = loggingEvent.getLocationInformation();
+            LocationInfo info = loggingEvent.getLocationInformation();
             addFieldData("file", info.getFileName());
             addFieldData("line_number", info.getLineNumber());
             addFieldData("class", info.getClassName());
@@ -104,7 +96,7 @@ public class JSONEventLayoutV0 extends Layout {
     }
 
     public boolean ignoresThrowable() {
-        return ignoreThrowable;
+        return false;
     }
 
     /**
@@ -126,7 +118,6 @@ public class JSONEventLayoutV0 extends Layout {
     }
 
     public void activateOptions() {
-        activeIgnoreThrowable = ignoreThrowable;
     }
 
     private void addFieldData(String keyname, Object keyval) {
