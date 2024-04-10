@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import net.logstash.log4j.data.HostData;
-import net.minidev.json.JSONObject;
 import org.apache.log4j.Layout;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.spi.LocationInfo;
@@ -14,6 +13,7 @@ import org.apache.log4j.spi.ThrowableInformation;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONObject;
 
 public class JSONEventLayoutV1 extends Layout {
 

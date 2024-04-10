@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import net.minidev.json.JSONObject;
-import net.minidev.json.JSONValue;
 import org.apache.log4j.*;
 
 import java.util.HashMap;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -56,7 +56,7 @@ public class JSONEventLayoutV1Test {
     public void testJSONEventLayoutIsJSON() {
         logger.info("this is an info message");
         String message = MockAppenderV1.getMessages()[0];
-        assertTrue(JSONValue.isValidJsonStrict(message), "Event is not valid JSON");
+        assertTrue(isValidJsonStrict(message), "Event is not valid JSON");
     }
 
     @Test
@@ -64,10 +64,9 @@ public class JSONEventLayoutV1Test {
         System.setProperty(JSONEventLayoutV1.ADDITIONAL_DATA_PROPERTY, userFieldsSingleProperty);
         logger.info("this is an info message with user fields");
         String message = MockAppenderV1.getMessages()[0];
-        assertTrue(JSONValue.isValidJsonStrict(message), "Event is not valid JSON");
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
-        assertTrue(jsonObject.containsKey("field1"), "Event does not contain field 'field1'");
+        assertTrue(isValidJsonStrict(message), "Event is not valid JSON");
+        JSONObject jsonObject = new JSONObject(message);
+        assertTrue(jsonObject.has("field1"), "Event does not contain field 'field1'");
         assertEquals("propval1", jsonObject.get("field1"), "Event does not contain value 'value1'");
         System.clearProperty(JSONEventLayoutV1.ADDITIONAL_DATA_PROPERTY);
     }
@@ -80,10 +79,9 @@ public class JSONEventLayoutV1Test {
 
         logger.info("this is an info message with user fields");
         String message = MockAppenderV1.getMessages()[0];
-        assertTrue(JSONValue.isValidJsonStrict(message), "Event is not valid JSON");
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
-        assertTrue(jsonObject.containsKey("field1"), "Event does not contain field 'field1'");
+        assertTrue(isValidJsonStrict(message), "Event is not valid JSON");
+        JSONObject jsonObject = new JSONObject(message);
+        assertTrue(jsonObject.has("field1"), "Event does not contain field 'field1'");
         assertEquals("value1", jsonObject.get("field1"), "Event does not contain value 'value1'");
 
         layout.setUserFields(prevUserData);
@@ -97,12 +95,11 @@ public class JSONEventLayoutV1Test {
 
         logger.info("this is an info message with user fields");
         String message = MockAppenderV1.getMessages()[0];
-        assertTrue(JSONValue.isValidJsonStrict(message), "Event is not valid JSON");
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
-        assertTrue(jsonObject.containsKey("field2"), "Event does not contain field 'field2'");
+        assertTrue(isValidJsonStrict(message), "Event is not valid JSON");
+        JSONObject jsonObject = new JSONObject(message);
+        assertTrue(jsonObject.has("field2"), "Event does not contain field 'field2'");
         assertEquals("value2", jsonObject.get("field2"), "Event does not contain value 'value2'");
-        assertTrue(jsonObject.containsKey("field3"), "Event does not contain field 'field3'");
+        assertTrue(jsonObject.has("field3"), "Event does not contain field 'field3'");
         assertEquals("value3", jsonObject.get("field3"), "Event does not contain value 'value3'");
 
         layout.setUserFields(prevUserData);
@@ -120,10 +117,9 @@ public class JSONEventLayoutV1Test {
 
         logger.info("this is an info message with user fields");
         String message = MockAppenderV1.getMessages()[0];
-        assertTrue(JSONValue.isValidJsonStrict(message), "Event is not valid JSON");
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
-        assertTrue(jsonObject.containsKey("field1"), "Event does not contain field 'field1'");
+        assertTrue(isValidJsonStrict(message), "Event is not valid JSON");
+        JSONObject jsonObject = new JSONObject(message);
+        assertTrue(jsonObject.has("field1"), "Event does not contain field 'field1'");
         assertEquals("propval1", jsonObject.get("field1"), "Event does not contain value 'propval1'");
 
         layout.setUserFields(prevUserData);
@@ -135,10 +131,9 @@ public class JSONEventLayoutV1Test {
     public void testJSONEventLayoutHasKeys() {
         logger.info("this is a test message");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
         for (String fieldName : logstashFields) {
-            assertTrue(jsonObject.containsKey(fieldName), "Event does not contain field: " + fieldName);
+            assertTrue(jsonObject.has(fieldName), "Event does not contain field: " + fieldName);
         }
     }
 
@@ -148,8 +143,7 @@ public class JSONEventLayoutV1Test {
         NDC.push(ndcData);
         logger.warn("I should have NDC data in my log");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
 
         assertEquals(ndcData, jsonObject.get("ndc"), "NDC is wrong");
     }
@@ -159,8 +153,7 @@ public class JSONEventLayoutV1Test {
         MDC.put("foo", "bar");
         logger.warn("I should have MDC data in my log");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
         JSONObject mdc = (JSONObject) jsonObject.get("mdc");
 
         assertEquals("bar", mdc.get("foo"), "MDC is wrong");
@@ -173,12 +166,11 @@ public class JSONEventLayoutV1Test {
         MDC.put("foo",nestedMdc);
         logger.warn("I should have nested MDC data in my log");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
         JSONObject mdc = (JSONObject) jsonObject.get("mdc");
         JSONObject nested = (JSONObject) mdc.get("foo");
 
-        assertTrue(mdc.containsKey("foo"), "Event is missing foo key");
+        assertTrue(mdc.has("foo"), "Event is missing foo key");
         assertEquals("baz", nested.get("bar"), "Nested MDC data is wrong");
     }
 
@@ -187,8 +179,7 @@ public class JSONEventLayoutV1Test {
         String exceptionMessage = "shits on fire, yo";
         logger.fatal("uh-oh", new IllegalArgumentException(exceptionMessage));
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
         JSONObject exceptionInformation = (JSONObject) jsonObject.get("exception");
 
         assertEquals("java.lang.IllegalArgumentException", exceptionInformation.get("exception_class"), "Exception class missing");
@@ -199,8 +190,7 @@ public class JSONEventLayoutV1Test {
     public void testJSONEventLayoutHasClassName() {
         logger.warn("warning dawg");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
 
         assertEquals(this.getClass().getCanonicalName(), jsonObject.get("class"), "Logged class does not match");
     }
@@ -209,8 +199,7 @@ public class JSONEventLayoutV1Test {
     public void testJSONEventHasFileName() {
         logger.warn("whoami");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
 
         assertNotNull(jsonObject.get("file"), "File value is missing");
     }
@@ -219,8 +208,7 @@ public class JSONEventLayoutV1Test {
     public void testJSONEventHasLoggerName() {
         logger.warn("whoami");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
         assertNotNull(jsonObject.get("logger_name"), "LoggerName value is missing");
     }
 
@@ -228,8 +216,7 @@ public class JSONEventLayoutV1Test {
     public void testJSONEventHasThreadName() {
         logger.warn("whoami");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
         assertNotNull(jsonObject.get("thread_name"), "ThreadName value is missing");
     }
 
@@ -242,13 +229,12 @@ public class JSONEventLayoutV1Test {
 
         logger.warn("warning dawg");
         String message = MockAppenderV1.getMessages()[0];
-        Object obj = JSONValue.parse(message);
-        JSONObject jsonObject = (JSONObject) obj;
+        JSONObject jsonObject = new JSONObject(message);
 
-        assertFalse(jsonObject.containsKey("file"), "atFields contains file value");
-        assertFalse(jsonObject.containsKey("line_number"), "atFields contains line_number value");
-        assertFalse(jsonObject.containsKey("class"), "atFields contains class value");
-        assertFalse(jsonObject.containsKey("method"), "atFields contains method value");
+        assertFalse(jsonObject.has("file"), "atFields contains file value");
+        assertFalse(jsonObject.has("line_number"), "atFields contains line_number value");
+        assertFalse(jsonObject.has("class"), "atFields contains class value");
+        assertFalse(jsonObject.has("method"), "atFields contains method value");
 
         // Revert the change to the layout to leave it as we found it.
         layout.setLocationInfo(prevLocationInfo);
@@ -288,5 +274,14 @@ public class JSONEventLayoutV1Test {
     public void testDateFormat() {
         long timestamp = 1364844991207L;
         assertEquals("2013-04-01T19:36:31.207Z", JSONEventLayoutV1.dateFormat(timestamp), "format does not produce expected output");
+    }
+
+    public boolean isValidJsonStrict(String json) {
+        try {
+            new JSONObject(json);
+        } catch (JSONException e) {
+            return false;
+        }
+        return true;
     }
 }
